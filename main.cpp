@@ -1,12 +1,9 @@
 #include <iostream>
+#include "include/chip8.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    std::cout << sizeof(int) << std::endl;
-    std::cout << sizeof(long) << std:: endl;
-    std::cout << sizeof(long int) << std:: endl;
-    std::cout << sizeof(long long int) << std:: endl;
-    std::cout << sizeof(bool) << std:: endl;
-    std::cout << sizeof(char) << std:: endl;
+    chip8 chip;
+    chip.load("Breakout.ch8");
+    chip.tick();
     return 0;
 }

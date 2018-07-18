@@ -20,14 +20,15 @@ class chip8 {
     std::array<std::uint8_t, 4096> memory;
     std::array<std::uint8_t, 16> V;
     std::array<std::uint8_t, 16> keyboard;
-    std::array<bool, 2048> display;
+
 
     std::stack<std::uint16_t> stack;
 
-    bool drawFlag;
+
 
     union {
       std::uint16_t opcode;
+
       struct {
         unsigned int N : 4;
         unsigned int Y : 4;
@@ -38,10 +39,16 @@ class chip8 {
         unsigned short low : 8;
         unsigned short high : 8;
       };
+      struct {
+          unsigned short NNN : 12;
+          unsigned short NA : 4;
+      };
     };
 
     void initialize();
   public:
+    bool drawFlag;
+    std::array<bool, 64*32> display;
     chip8();
     ~chip8();
 

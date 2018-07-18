@@ -41,6 +41,9 @@ void chip8::initialize() {
   V.fill(0);
   display.fill(false);
   keyboard.fill(0);
+
+    for(int i = 0; i < 80; ++i)
+        memory[i] = fontset[i];
 }
 
 void chip8::load(const std::string &fileName) {
@@ -63,8 +66,6 @@ void chip8::load(const std::string &fileName) {
 
 void chip8::tick() {
   opcode = memory[pcounter] << 8u | memory[pcounter + 1u];
-
-  cout << std::hex << opcode << "\n";
 
   switch(A){
     case 0x0:
@@ -187,11 +188,11 @@ void chip8::tick() {
       pcounter += 2;
       break;
     case 0xA:
-      I = X << 8 | low;
+      I = NNN;
       pcounter += 2;
       break;
     case 0xB:
-      pcounter = (X << 8 | low) + V[0];
+      pcounter = NNN + V[0];
       break;
     case 0xC: {
       std::default_random_engine generator;
@@ -202,9 +203,9 @@ void chip8::tick() {
       break;
     }
     case 0xD: {
-      unsigned short x = V[(opcode & 0x0F00) >> 8];
-      unsigned short y = V[(opcode & 0x00F0) >> 4];
-      unsigned short height = opcode & 0x000F;
+      unsigned short x = V[X];
+      unsigned short y = V[Y];
+      unsigned short height = N;
       unsigned short pixel;
 
       V[16] = 0;

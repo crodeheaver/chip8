@@ -7,22 +7,38 @@
 #include <array>
 #include <stack>
 #include <string>
+#include <cstdint>
 
 class chip8 {
   private:
-    uint16_t pcounter;
-    uint16_t I;
-    uint16_t opcode;
+    std::uint16_t pcounter;
+    std::uint16_t I;
 
-    uint8_t displaytimer;
-    uint8_t soundtimer;
+    std::uint8_t displaytimer;
+    std::uint8_t soundtimer;
 
-    std::array<uint8_t, 4096> memory;
-    std::array<uint8_t, 16> V;
-    std::array<uint8_t, 16> input;
+    std::array<std::uint8_t, 4096> memory;
+    std::array<std::uint8_t, 16> V;
+    std::array<std::uint8_t, 16> keyboard;
     std::array<bool, 2048> display;
 
-    std::stack<uint16_t> stack;
+    std::stack<std::uint16_t> stack;
+
+    bool drawFlag;
+
+    union {
+      std::uint16_t opcode;
+      struct {
+        unsigned int N : 4;
+        unsigned int Y : 4;
+        unsigned int X : 4;
+        unsigned int A : 4;
+      };
+      struct {
+        unsigned short low : 8;
+        unsigned short high : 8;
+      };
+    };
 
     void initialize();
   public:

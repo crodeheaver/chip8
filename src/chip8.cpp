@@ -5,8 +5,29 @@
 #include "../include/chip8.h"
 #include <iostream>
 #include <fstream>
+#include <random>
 
 using namespace std;
+
+uint8_t fontset[80] =
+        {
+                0xF0, 0x90, 0x90, 0x90, 0xF0, //0
+                0x20, 0x60, 0x20, 0x20, 0x70, //1
+                0xF0, 0x10, 0xF0, 0x80, 0xF0, //2
+                0xF0, 0x10, 0xF0, 0x10, 0xF0, //3
+                0x90, 0x90, 0xF0, 0x10, 0x10, //4
+                0xF0, 0x80, 0xF0, 0x10, 0xF0, //5
+                0xF0, 0x80, 0xF0, 0x90, 0xF0, //6
+                0xF0, 0x10, 0x20, 0x40, 0x40, //7
+                0xF0, 0x90, 0xF0, 0x90, 0xF0, //8
+                0xF0, 0x90, 0xF0, 0x10, 0xF0, //9
+                0xF0, 0x90, 0xF0, 0x90, 0x90, //A
+                0xE0, 0x90, 0xE0, 0x90, 0xE0, //B
+                0xF0, 0x80, 0x80, 0x80, 0xF0, //C
+                0xE0, 0x90, 0x90, 0x90, 0xE0, //D
+                0xF0, 0x80, 0xF0, 0x80, 0xF0, //E
+                0xF0, 0x80, 0xF0, 0x80, 0x80  //F
+        };
 
 chip8::chip8() = default;
 chip8::~chip8() = default;
@@ -19,7 +40,7 @@ void chip8::initialize() {
   memory.fill(0);
   V.fill(0);
   display.fill(false);
-  input.fill(0);
+  keyboard.fill(0);
 }
 
 void chip8::load(const std::string &fileName) {
@@ -43,41 +64,240 @@ void chip8::load(const std::string &fileName) {
 void chip8::tick() {
   opcode = memory[pcounter] << 8u | memory[pcounter + 1u];
 
-  switch(opcode & 0xF000u){
-    case 0x0000:
+  cout << std::hex << opcode << "\n";
+
+  switch(A){
+    case 0x0:
+      switch(low){
+        case 0xE0:
+          display.fill(0);
+          drawFlag = true;
+          pcounter+=2;
+          break;
+        case 0xEE:
+          pcounter = stack.top();
+          stack.pop();
+          break;
+        default:
+          cout << "Unrecognized command " << std::hex << opcode << "\n";
+      }
       break;
-    case 0x1000:
-      pcounter = opcode & (uint8_t)0x0FFF;
+    case 0x1:
+      pcounter = opcode & 0x0FFFu;
       break;
-    case 0x2000:
+    case 0x2:
       stack.push(pcounter);
-      pcounter = opcode & (uint8_t)0x0FFF;
+      pcounter = opcode & 0x0FFFu;
       break;
-    case 0x3000:
-      if(V[opcode & 0x0F00u] == opcode & 0x00FFu) {
-        pcounter += 4;
+    case 0x3:
+      if(V[X] == low) {
+        pcounter += 2;
       }
+      pcounter += 2;
       break;
-    case 0x4000:
-      if(V[opcode & 0x0F00u] != opcode & 0x00FFu) {
-        pcounter += 4;
+    case 0x4:
+      if(V[X] != low) {
+        pcounter += 2;
       }
+      pcounter += 2;
       break;
-    case 0x5000:
-      if(V[opcode & 0x0F00u] == V[opcode & 0x00F0u]) {
-        pcounter += 4;
+    case 0x5:
+      if(V[X] == V[Y]) {
+        pcounter += 2;
       }
+      pcounter += 2;
       break;
-    case 0x6000:
-      V[opcode & 0x0F00u] = (uint8_t)(opcode & 0x00FFu);
+    case 0x6:
+      V[X] = low;
       pcounter += 2;
       break;
 
-    case 0x7000:
-      V[opcode & 0x0F00u] = (uint8_t)(V[opcode & 0x0F00u] + (opcode & 0x00FFu));
+    case 0x7:
+      V[X] = V[X] + low;
       pcounter += 2;
       break;
+    case 0x8:
+      switch(N){
+        case 0x0:
+          V[X] = V[Y];
+          pcounter+=2;
+          break;
+        case 0x1:
+          V[X] = V[X] | V[Y];
+          pcounter+=2;
+          break;
+        case 0x2:
+          V[X] = V[X] & V[Y];
+          pcounter+=2;
+          break;
+        case 0x3:
+          V[X] = V[X] ^ V[Y];
+          pcounter+=2;
+          break;
+        case 0x4: {
+          unsigned int value = V[X] + V[Y];
+          V[X] = (uint8_t) value;
+          if (value > 255)
+            V[0xF] = 1;
+          else
+            V[0xF] = 0;
+          pcounter += 2;
+          break;
+        }
+        case 0x5: {
+          if (V[X] > V[Y])
+            V[0xF] = 1;
+          else
+            V[0xF] = 0;
+          V[X] = V[X] - V[Y];
+          pcounter += 2;
+          break;
+        }
+        case 0x6:
+          if((V[X] & 0x0001) == 1)
+            V[0xF] = 1;
+          else
+            V[0xF] = 0;
+          V[X] = V[X] / 2;
+          pcounter+=2;
+          break;
+        case 0x7:
+          if(V[Y] > V[X])
+            V[0xF] = 1;
+          else
+            V[0xF] = 0;
+          V[X] = V[Y] - V[X];
+          pcounter+=2;
+          break;
+        case 0xE:
+          if((V[X] & 0xA000) == 1)
+            V[0xF] = 1;
+          else
+            V[0xF] = 0;
+          V[X] = V[X] * 2;
+          pcounter+=2;
+          break;
+        default:
+          cout << "Unrecognized command " << std::hex << opcode << "\n";
+      }
+      break;
+    case 0x9:
+      if(V[X] != V[Y])
+        pcounter += 2;
+      pcounter += 2;
+      break;
+    case 0xA:
+      I = X << 8 | low;
+      pcounter += 2;
+      break;
+    case 0xB:
+      pcounter = (X << 8 | low) + V[0];
+      break;
+    case 0xC: {
+      std::default_random_engine generator;
+      std::uniform_int_distribution<short> distribution(0,255);
+      auto random = distribution(generator);
+      V[X] = random & low;
+      pcounter +=2;
+      break;
+    }
+    case 0xD: {
+      unsigned short x = V[(opcode & 0x0F00) >> 8];
+      unsigned short y = V[(opcode & 0x00F0) >> 4];
+      unsigned short height = opcode & 0x000F;
+      unsigned short pixel;
+
+      V[16] = 0;
+      for (int yline = 0; yline < height; yline++)
+      {
+        pixel = memory[I + yline];
+        for(int xline = 0; xline < 8; xline++)
+        {
+          if((pixel & (0x80 >> xline)) != 0)
+          {
+            if(display[(x + xline + ((y + yline) * 64))] == 1)
+            {
+              V[0xF] = true;
+            }
+            display[x + xline + ((y + yline) * 64)] ^= 1;
+          }
+        }
+      }
+
+      drawFlag = true;
+      pcounter += 2;
+      break;
+    }
+    case 0xE:
+      switch(low){
+        case 0x9E:
+          if(keyboard[V[X]] != 0)
+            pcounter+=2;
+          pcounter+=2;
+          break;
+        case 0xA1:
+          if(keyboard[V[X]] == 0)
+            pcounter+=2;
+          pcounter+=2;
+          break;
+        default:
+          cout << "Unrecognized command " << std::hex << opcode << "\n";
+      }
+      break;
+    case 0xF:
+      switch(low){
+        case 0x07:
+          V[X] = displaytimer;
+          pcounter += 2;
+          break;
+        case 0x0A: {
+          uint8_t in;
+          cin >> in;
+          V[X] = in;
+          pcounter += 2;
+          break;
+        }
+        case 0x15:
+          displaytimer = V[X];
+          pcounter += 2;
+          break;
+        case 0x18:
+          soundtimer = V[X];
+          pcounter += 2;
+          break;
+        case 0x1E:
+          I = I + V[X];
+          pcounter += 2;
+          break;
+        case 0x29:
+          I = V[X] * 0x5u;
+          pcounter += 2;
+          break;
+        case 0x33:
+          memory[I] = V[X] / 100;
+          memory[I] = (V[X] / 10) % 10;
+          memory[I] = (V[X] % 100) % 10;
+          pcounter += 2;
+          break;
+        case 0x55:
+          for(auto i = 0; i < X; i++){
+            memory[i + I] = V[i];
+          }
+          pcounter += 2;
+          break;
+        case 0x65:
+          for(auto i = 0; i < X; i++){
+            V[i] = memory[i + I];
+          }
+          pcounter += 2;
+          break;
+        default:
+          cout << "Unrecognized command " << std::hex << opcode << "\n";
+          break;
+      }
+      break;
     default:
+      cout << "Unrecognized command " << std::hex << opcode << "\n";
       break;
   }
 }

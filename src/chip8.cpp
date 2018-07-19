@@ -46,7 +46,7 @@ void chip8::initialize() {
         memory[i] = fontset[i];
 }
 
-void chip8::load(const std::string &fileName) {
+bool chip8::load(const std::string &fileName) {
   initialize();
 
   ifstream program(fileName, std::ios::binary);
@@ -62,6 +62,7 @@ void chip8::load(const std::string &fileName) {
   program.read(startLocation, len);
 
   program.close();
+  return true;
 }
 
 void chip8::tick() {
@@ -78,6 +79,7 @@ void chip8::tick() {
         case 0xEE:
           pcounter = stack.top();
           stack.pop();
+          pcounter += 2;
           break;
         default:
           cout << "Unrecognized command " << std::hex << opcode << "\n";
@@ -252,9 +254,20 @@ void chip8::tick() {
           pcounter += 2;
           break;
         case 0x0A: {
-          uint8_t in;
-          cin >> in;
-          V[X] = in;
+          bool keyPress = false;
+
+          for(int i = 0; i < 16; ++i)
+          {
+            if(keyboard[i] != 0)
+            {
+              V[X] = i;
+              keyPress = true;
+            }
+          }
+
+          // If we didn't received a keypress, skip this cycle and try again.
+          if(!keyPress)
+            return;
           pcounter += 2;
           break;
         }
@@ -301,4 +314,14 @@ void chip8::tick() {
       cout << "Unrecognized command " << std::hex << opcode << "\n";
       break;
   }
+
+  if(displaytimer > 0)
+    displaytimer -= 1;
+
+  if(soundtimer > 0)
+    soundtimer -= 1;
+
+  if(soundtimer == 1)
+    cout << "beep" << "\n";
+
 }

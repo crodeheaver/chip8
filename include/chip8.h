@@ -19,7 +19,7 @@ class chip8 {
 
     std::array<std::uint8_t, 4096> memory;
     std::array<std::uint8_t, 16> V;
-    std::array<std::uint8_t, 16> keyboard;
+
 
 
     std::stack<std::uint16_t> stack;
@@ -48,13 +48,17 @@ class chip8 {
     void initialize();
   public:
     bool drawFlag;
+
     std::array<bool, 64*32> display;
+
+    std::array<std::uint8_t, 16> keyboard;
+
     chip8();
     ~chip8();
 
     void tick();
 
-    void load(const std::string& fileName);
+    bool load(const std::string& fileName);
 };
 
 

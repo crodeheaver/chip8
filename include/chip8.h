@@ -20,8 +20,6 @@ class chip8 {
     std::array<std::uint8_t, 4096> memory;
     std::array<std::uint8_t, 16> V;
 
-
-
     std::stack<std::uint16_t> stack;
 
 
@@ -48,6 +46,7 @@ class chip8 {
     void initialize();
   public:
     bool drawFlag;
+    bool soundFlag;
 
     std::array<bool, 64*32> display;
 

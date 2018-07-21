@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 #include <array>
 #include "chip8.h"
+#include "beeper.h"
 
 
 class App {
@@ -19,6 +20,7 @@ private:
     SDL_Renderer *renderer = nullptr;
 
     SDL_Rect RectangleFactory(int x, int y);
+    Beeper beeper;
 
 public:
     App();

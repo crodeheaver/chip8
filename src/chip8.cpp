@@ -322,6 +322,6 @@ void chip8::tick() {
     soundtimer -= 1;
 
   if(soundtimer == 1)
-    cout << "beep" << "\n";
+    soundFlag = true;
 
 }

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
-add_executable(chip8 main.cpp src/chip8.cpp include/chip8.h src/app.cpp include/app.h)
+add_executable(chip8 main.cpp src/chip8.cpp include/chip8.h src/app.cpp include/app.h src/beeper.cpp include/beeper.h)
 
 target_link_libraries(chip8 ${SDL2_LIBRARIES} )
 

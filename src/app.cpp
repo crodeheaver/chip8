@@ -119,20 +119,23 @@ void App::OnLoop() {
 }
 
 void App::OnRender() {
-    SDL_SetRenderDrawColor( renderer, 0, 0, 0, 255 );
-    SDL_RenderClear(renderer);
+    if(cpu.drawFlag) {
+        SDL_SetRenderDrawColor( renderer, 0, 0, 0, 255 );
+        SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor( renderer, 255, 255, 255, 255 );
+        SDL_SetRenderDrawColor( renderer, 255, 255, 255, 255 );
 
-    for(int y = 0; y < 32; ++y)
-        for(int x = 0; x < 64; ++x) {
-            if(cpu.display[(y * 64) + x] == 1) {
-                SDL_Rect r = RectangleFactory(x*10, y*10);
-                SDL_RenderFillRect( renderer, &r );
+        for(int y = 0; y < 32; ++y)
+            for(int x = 0; x < 64; ++x) {
+                if(cpu.display[(y * 64) + x] == 1) {
+                    SDL_Rect r = RectangleFactory(x*10, y*10);
+                    SDL_RenderFillRect( renderer, &r );
+                }
+
             }
-
+        SDL_RenderPresent(renderer);
+        cpu.drawFlag = false;
     }
-    SDL_RenderPresent(renderer);
 }
 
 void App::OnCleanup() {

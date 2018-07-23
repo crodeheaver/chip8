@@ -86,11 +86,11 @@ void chip8::tick() {
       }
       break;
     case 0x1:
-      pcounter = opcode & 0x0FFFu;
+      pcounter = NNN;
       break;
     case 0x2:
       stack.push(pcounter);
-      pcounter = opcode & 0x0FFFu;
+      pcounter = NNN;
       break;
     case 0x3:
       if(V[X] == low) {
@@ -116,7 +116,7 @@ void chip8::tick() {
       break;
 
     case 0x7:
-      V[X] = V[X] + low;
+      V[X] += low;
       pcounter += 2;
       break;
     case 0x8:
@@ -138,15 +138,16 @@ void chip8::tick() {
           pcounter+=2;
           break;
         case 0x4: {
-          unsigned int value = V[X] + V[Y];
-          V[X] = (uint8_t) value;
-          if (value > 255)
+          V[X] += V[Y];
+          if(V[X] < V[Y])
             V[0xF] = 1;
           else
             V[0xF] = 0;
+
           pcounter += 2;
           break;
         }
+
         case 0x5: {
           if (V[X] > V[Y])
             V[0xF] = 1;
@@ -156,6 +157,7 @@ void chip8::tick() {
           pcounter += 2;
           break;
         }
+
         case 0x6:
           if((V[X] & 0x0001) == 1)
             V[0xF] = 1;
@@ -164,6 +166,7 @@ void chip8::tick() {
           V[X] = V[X] / 2;
           pcounter+=2;
           break;
+
         case 0x7:
           if(V[Y] > V[X])
             V[0xF] = 1;
@@ -172,6 +175,7 @@ void chip8::tick() {
           V[X] = V[Y] - V[X];
           pcounter+=2;
           break;
+
         case 0xE:
           if((V[X] & 0xA000) == 1)
             V[0xF] = 1;
@@ -180,6 +184,7 @@ void chip8::tick() {
           V[X] = V[X] * 2;
           pcounter+=2;
           break;
+
         default:
           cout << "Unrecognized command " << std::hex << opcode << "\n";
       }
@@ -197,9 +202,10 @@ void chip8::tick() {
       pcounter = NNN + V[0];
       break;
     case 0xC: {
-      std::default_random_engine generator;
-      std::uniform_int_distribution<short> distribution(0,255);
-      auto random = distribution(generator);
+      std::random_device rd;
+      std::mt19937 mt(rd());
+      std::uniform_int_distribution<short> dist(0, 255);
+      auto random = dist(mt);
       V[X] = random & low;
       pcounter +=2;
       break;
@@ -210,7 +216,7 @@ void chip8::tick() {
       unsigned short height = N;
       unsigned short pixel;
 
-      V[16] = 0;
+      V[0xF] = 0;
       for (int yline = 0; yline < height; yline++)
       {
         pixel = memory[I + yline];
@@ -280,7 +286,11 @@ void chip8::tick() {
           pcounter += 2;
           break;
         case 0x1E:
-          I = I + V[X];
+          if(I + V[X] > NNN)	// VF is set to 1 when range overflow (I+VX>0xFFF), and 0 when there isn't.
+            V[0xF] = 1;
+          else
+            V[0xF] = 0;
+          I += V[X];
           pcounter += 2;
           break;
         case 0x29:
@@ -289,20 +299,22 @@ void chip8::tick() {
           break;
         case 0x33:
           memory[I] = V[X] / 100;
-          memory[I] = (V[X] / 10) % 10;
-          memory[I] = (V[X] % 100) % 10;
+          memory[I +1] = (V[X] / 10) % 10;
+          memory[I + 2] = (V[X] % 100) % 10;
           pcounter += 2;
           break;
         case 0x55:
-          for(auto i = 0; i < X; i++){
+          for(auto i = 0; i <= X; i++){
             memory[i + I] = V[i];
           }
+          I += ((opcode & 0x0F00) >> 8) + 1;
           pcounter += 2;
           break;
         case 0x65:
-          for(auto i = 0; i < X; i++){
+          for(auto i = 0; i <= X; i++){
             V[i] = memory[i + I];
           }
+          I += ((opcode & 0x0F00) >> 8) + 1;
           pcounter += 2;
           break;
         default:

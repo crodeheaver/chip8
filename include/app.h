@@ -12,8 +12,6 @@
 
 class App {
 private:
-    bool running;
-
     chip8 cpu;
 
     SDL_Window *window = nullptr;
@@ -23,6 +21,7 @@ private:
     Beeper beeper;
 
 public:
+    bool running;
     App();
 
     int OnExecute();
